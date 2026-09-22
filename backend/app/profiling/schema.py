@@ -49,6 +49,8 @@ class SeriesProfile(BaseModel):
     series_id: str
     frequency: str
     n_obs: int
+    start_timestamp: datetime
+    end_timestamp: datetime
     missing: MissingProfile
     seasonality: SeasonalityProfile
     trend: TrendProfile

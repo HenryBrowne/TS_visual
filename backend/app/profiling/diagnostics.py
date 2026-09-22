@@ -193,6 +193,8 @@ def profile_series(df: pd.DataFrame, series_id: str, frequency: str) -> SeriesPr
         series_id=series_id,
         frequency=frequency,
         n_obs=len(df),
+        start_timestamp=df["timestamp"].min(),
+        end_timestamp=df["timestamp"].max(),
         missing=missing,
         seasonality=seasonality,
         trend=trend,
