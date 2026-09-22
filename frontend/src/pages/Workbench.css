@@ -1,0 +1,237 @@
+.workbench {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.workbench-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding: var(--space-3);
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-hint {
+  font-size: 11px;
+  margin: var(--space-2) 0;
+}
+
+.sidebar-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-2);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius);
+  text-align: left;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.sidebar-item:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+
+.sidebar-item.selected {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.sidebar-item:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.workbench-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.series-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.series-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+}
+
+.series-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.series-card-title {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+}
+
+.icon-button:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-bad);
+}
+
+.chevron {
+  color: var(--color-text-muted);
+}
+
+.series-card-body {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.narrative {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: var(--space-3) 0;
+}
+
+.series-card-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.section-heading {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.feature-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: 13px;
+}
+
+.feature-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+.llm-notes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.llm-notes li {
+  padding: var(--space-2);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius);
+}
+
+.llm-rationale {
+  margin-top: 2px;
+}
+
+.llm-models {
+  font-size: 12px;
+  margin-top: var(--space-2);
+}
+
+.delta-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 13px;
+}
+
+.delta-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.delta-label {
+  color: var(--color-text-muted);
+}
+
+.delta-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.delta-good {
+  color: var(--color-good);
+  font-weight: 600;
+}
+
+.delta-arrow {
+  color: var(--color-text-muted);
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.metrics-table th,
+.metrics-table td {
+  text-align: left;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.metrics-table .best-row {
+  background: var(--color-accent-muted);
+  font-weight: 600;
+}
