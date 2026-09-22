@@ -80,6 +80,20 @@ def test_melt_wide_to_long_produces_one_series_per_value_column():
     assert len(long_df) == 4
 
 
+def test_melt_wide_to_long_handles_source_column_literally_named_value():
+    # pandas' melt() raises if value_name collides with an existing column
+    # -- a wide CSV whose own value column is literally named "value" (very
+    # common) must not crash. Regression test for a live bug found on the
+    # classic AirPassengers.csv export (columns: "", "time", "value").
+    df = pd.DataFrame({"time": ["2020-01-01", "2020-01-02"], "value": [1, 2]})
+    mapping = {"time": "timestamp", "value": "value"}
+
+    long_df = melt_wide_to_long(df, mapping)
+
+    assert list(long_df["series_id"]) == ["value", "value"]
+    assert list(long_df["value"]) == [1, 2]
+
+
 def test_validate_clean_data_has_no_errors_or_warnings():
     df = pd.DataFrame(
         {

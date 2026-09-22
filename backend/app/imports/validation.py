@@ -16,8 +16,12 @@ MIN_TIMESTAMP_PARSE_FRACTION = 0.5
 def melt_wide_to_long(df: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
     ts_col = next((c for c, role in mapping.items() if role == "timestamp"), None)
     value_cols = [c for c, role in mapping.items() if role == "value"]
-    long_df = df.melt(id_vars=[ts_col], value_vars=value_cols, var_name="series_id", value_name="value")
-    return long_df.rename(columns={ts_col: "timestamp"})[["series_id", "timestamp", "value"]]
+    # pandas' melt() raises if value_name collides with any existing column
+    # name (e.g. a wide-format CSV that happens to have a column literally
+    # called "value") -- melt into a name that can't collide, then rename.
+    long_df = df.melt(id_vars=[ts_col], value_vars=value_cols, var_name="series_id", value_name="__melted_value__")
+    long_df = long_df.rename(columns={ts_col: "timestamp", "__melted_value__": "value"})
+    return long_df[["series_id", "timestamp", "value"]]
 
 
 def apply_mapping(df: pd.DataFrame, mapping: dict[str, str], fmt: str) -> pd.DataFrame:
