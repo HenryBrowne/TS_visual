@@ -8,6 +8,7 @@ import pandas as pd
 
 from app.core.frequency import FREQ_TO_PANDAS
 from app.features.catalog import build_feature_catalog
+from app.features.deltas import compute_diagnostic_deltas
 from app.features.engineering import apply_features
 from app.features.schema import FeatureSpec
 from app.models.metrics import compute_metrics
@@ -65,9 +66,18 @@ def refit_series(
         metrics[name] = compute_metrics(actual, pred)
         forecast[name] = [{"timestamp": ts, "value": float(v)} for ts, v in zip(timestamps, pred)]
 
+    best_model = min(metrics, key=lambda name: metrics[name]["smape"])
+    deltas = compute_diagnostic_deltas(df, specs, profile, series_id=series_id, frequency=frequency)
+
+    all_timestamps = df["timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%S").tolist()
+    actual_series = [{"timestamp": ts, "value": float(v)} for ts, v in zip(all_timestamps, df["value"])]
+
     return {
         "profile": profile,
         "metrics": metrics,
         "forecast": forecast,
         "feature_config": {s.name: s.enabled for s in specs},
+        "actual": actual_series,
+        "best_model": best_model,
+        "deltas": deltas.model_dump(),
     }
