@@ -1,5 +1,5 @@
-"""Full-dataset batch benchmark: refits every indexed series against the
-default feature catalog and every model in the zoo, writing per-series,
+"""Full-dataset batch benchmark: refits every series in one dataset against
+the default feature catalog and every model in the zoo, writing per-series,
 per-model scores to the leaderboard cache table. Runs as a FastAPI
 BackgroundTask -- owns its own DB session since the request's session is
 torn down once the response is sent.
@@ -14,7 +14,7 @@ from app.models.refit import refit_series
 from app.profiling.cache import get_or_compute_profile
 
 
-def run_benchmark_job(job_id: str) -> None:
+def run_benchmark_job(job_id: str, dataset_id: str) -> None:
     db = SessionLocal()
     try:
         job = db.get(Job, job_id)
@@ -25,22 +25,28 @@ def run_benchmark_job(job_id: str) -> None:
         job.progress_pct = 0.0
         db.commit()
 
-        series_ids = [row.series_id for row in db.query(Series.series_id).order_by(Series.series_id).all()]
+        series_ids = [
+            row.series_id
+            for row in db.query(Series.series_id)
+            .filter(Series.dataset_id == dataset_id)
+            .order_by(Series.series_id)
+            .all()
+        ]
         total = len(series_ids)
 
         for i, series_id in enumerate(series_ids, start=1):
-            df, frequency = load_series(db, series_id)
-            profile = get_or_compute_profile(db, df, series_id=series_id, frequency=frequency)
+            df, frequency = load_series(db, dataset_id, series_id)
+            profile = get_or_compute_profile(db, df, dataset_id=dataset_id, series_id=series_id, frequency=frequency)
             result = refit_series(df, series_id=series_id, frequency=frequency, toggle_state={}, profile=profile)
 
             for model_name, metrics in result["metrics"].items():
-                upsert_leaderboard_entry(db, series_id, model_name, metrics, job_id)
+                upsert_leaderboard_entry(db, dataset_id, series_id, model_name, metrics, job_id)
 
             job.progress_pct = round(100 * i / total, 2) if total else 100.0
             db.commit()
 
         job.status = JobStatus.succeeded
-        job.result_ref = f"leaderboard:{total}_series"
+        job.result_ref = f"leaderboard:{dataset_id}:{total}_series"
         db.commit()
     except Exception as exc:  # noqa: BLE001 -- job failures must be recorded, not raised into the background task runner
         db.rollback()

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -9,8 +9,8 @@ from app.core.db import Base
 class Series(Base):
     __tablename__ = "series"
 
+    dataset_id: Mapped[str] = mapped_column(String, ForeignKey("datasets.id"), primary_key=True)
     series_id: Mapped[str] = mapped_column(String, primary_key=True)
-    dataset: Mapped[str] = mapped_column(String, nullable=False)
     frequency: Mapped[str] = mapped_column(String, nullable=False)
     n_obs: Mapped[int] = mapped_column(Integer, nullable=False)
     start_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)

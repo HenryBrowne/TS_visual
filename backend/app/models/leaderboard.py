@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, Integer, String, UniqueConstraint, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from app.core.db import Base
@@ -14,9 +14,12 @@ class LeaderboardEntry(Base):
     """
 
     __tablename__ = "leaderboard_entries"
-    __table_args__ = (UniqueConstraint("series_id", "model_name", name="uq_leaderboard_series_model"),)
+    __table_args__ = (
+        UniqueConstraint("dataset_id", "series_id", "model_name", name="uq_leaderboard_dataset_series_model"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    dataset_id: Mapped[str] = mapped_column(String, ForeignKey("datasets.id"), nullable=False)
     series_id: Mapped[str] = mapped_column(String, nullable=False)
     model_name: Mapped[str] = mapped_column(String, nullable=False)
     mae: Mapped[float] = mapped_column(Float, nullable=False)
@@ -28,14 +31,20 @@ class LeaderboardEntry(Base):
     )
 
 
-def upsert_leaderboard_entry(db: Session, series_id: str, model_name: str, metrics: dict, job_id: str) -> None:
+def upsert_leaderboard_entry(
+    db: Session, dataset_id: str, series_id: str, model_name: str, metrics: dict, job_id: str
+) -> None:
     row = (
         db.query(LeaderboardEntry)
-        .filter(LeaderboardEntry.series_id == series_id, LeaderboardEntry.model_name == model_name)
+        .filter(
+            LeaderboardEntry.dataset_id == dataset_id,
+            LeaderboardEntry.series_id == series_id,
+            LeaderboardEntry.model_name == model_name,
+        )
         .one_or_none()
     )
     if row is None:
-        row = LeaderboardEntry(series_id=series_id, model_name=model_name, job_id=job_id, **metrics)
+        row = LeaderboardEntry(dataset_id=dataset_id, series_id=series_id, model_name=model_name, job_id=job_id, **metrics)
         db.add(row)
     else:
         row.mae = metrics["mae"]
@@ -44,9 +53,10 @@ def upsert_leaderboard_entry(db: Session, series_id: str, model_name: str, metri
         row.job_id = job_id
 
 
-def get_leaderboard_rows(db: Session) -> list[dict]:
+def get_leaderboard_rows(db: Session, dataset_id: str) -> list[dict]:
     """Pure cache read: aggregates the most recent batch benchmark job's
-    per-series scores into a per-model average, no live model fitting.
+    per-series scores, within one dataset, into a per-model average -- no
+    live model fitting, and never mixes scores across datasets.
     """
     rows = (
         db.query(
@@ -56,6 +66,7 @@ def get_leaderboard_rows(db: Session) -> list[dict]:
             func.avg(LeaderboardEntry.smape).label("avg_smape"),
             func.count(LeaderboardEntry.series_id).label("n_series"),
         )
+        .filter(LeaderboardEntry.dataset_id == dataset_id)
         .group_by(LeaderboardEntry.model_name)
         .order_by(func.avg(LeaderboardEntry.smape).asc())
         .all()

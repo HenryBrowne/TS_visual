@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -9,6 +9,7 @@ from app.core.db import Base
 class SeriesDiagnosticCache(Base):
     __tablename__ = "series_diagnostic_cache"
 
+    dataset_id: Mapped[str] = mapped_column(String, ForeignKey("datasets.id"), primary_key=True)
     series_id: Mapped[str] = mapped_column(String, primary_key=True)
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
     suggested_features: Mapped[list] = mapped_column(JSON, nullable=False)

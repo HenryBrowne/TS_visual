@@ -1,0 +1,126 @@
+.import-wizard {
+  max-width: 720px;
+}
+
+.wizard-steps {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  gap: var(--space-2);
+}
+
+.wizard-steps li {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.wizard-steps li.active {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.wizard-steps li.done {
+  color: var(--color-good);
+}
+
+.wizard-step {
+  padding: var(--space-4);
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-4);
+}
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-3) 0;
+}
+
+.mapping-table th,
+.mapping-table td {
+  text-align: left;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.mapping-column-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.mapping-table select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.wide-melt-notice {
+  padding: var(--space-3);
+  background: var(--color-accent-muted);
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: var(--space-2);
+}
+
+.validation-summary {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.chip {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  font-size: 12px;
+  margin-bottom: var(--space-2);
+}
+
+.chip-error {
+  background: color-mix(in srgb, var(--color-bad) 12%, transparent);
+  border: 1px solid var(--color-bad);
+  color: var(--color-bad);
+}
+
+.chip-warning {
+  background: color-mix(in srgb, var(--color-warn) 15%, transparent);
+  border: 1px solid var(--color-warn);
+  color: var(--color-warn);
+}
+
+.preview-table {
+  margin-top: var(--space-3);
+}
+
+.dataset-name-label {
+  display: block;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.dataset-name-label input {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}

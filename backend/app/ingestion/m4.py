@@ -1,6 +1,6 @@
 """Normalize a subset of an M4 frequency group into the common
 `series_id | timestamp | value` schema, write it to a local parquet file,
-and index it in the Postgres `series` table.
+and index it in the Postgres `series` table under a given dataset.
 
 M4 does not release real calendar dates, so timestamps are synthesized by
 anchoring every series to a fixed start date and stepping by the group's
@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pandas as pd
 from datasetsforecast.m4 import M4
+from sqlalchemy.orm import Session
 
 from app.core.db import Base, SessionLocal, engine
 from app.core.frequency import FREQ_TO_PANDAS
-from app.ingestion.models import Series
-
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DATA_RAW_DIR = PROJECT_ROOT / "data" / "raw"
-DATA_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+from app.core.paths import DATA_PROCESSED_DIR, DATA_RAW_DIR
+from app.datasets.models import DatasetFormat, DatasetStatus
+from app.datasets.service import get_or_create_reference_dataset
+from app.ingestion.writer import write_series_table
 
 ANCHOR_DATE = pd.Timestamp("2013-01-01")
 
@@ -45,49 +45,38 @@ def normalize(y_df: pd.DataFrame, group: str, limit: int) -> pd.DataFrame:
     return out
 
 
-def ingest(dataset: str, group: str, limit: int) -> Path:
-    if dataset != "M4":
-        raise ValueError("Only the M4 dataset is supported in v1")
-
+def ingest(db: Session, dataset_id: str, group: str, limit: int) -> Path:
     DATA_RAW_DIR.mkdir(parents=True, exist_ok=True)
     DATA_PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
     y_df, _, _ = M4.load(directory=str(DATA_RAW_DIR), group=group)
     normalized = normalize(y_df, group, limit)
 
-    out_path = DATA_PROCESSED_DIR / f"m4_{group.lower()}_sample.parquet"
+    out_path = DATA_PROCESSED_DIR / f"m4_{group.lower()}_{dataset_id}.parquet"
     normalized.to_parquet(out_path, index=False)
 
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    try:
-        for series_id, series_df in normalized.groupby("series_id"):
-            row = db.get(Series, series_id)
-            if row is None:
-                row = Series(series_id=series_id)
-                db.add(row)
-            row.dataset = dataset
-            row.frequency = group
-            row.n_obs = len(series_df)
-            row.start_timestamp = series_df["timestamp"].min()
-            row.end_timestamp = series_df["timestamp"].max()
-            row.source_path = out_path.relative_to(PROJECT_ROOT).as_posix()
-        db.commit()
-    finally:
-        db.close()
+    write_series_table(db, dataset_id, normalized, out_path, default_frequency=group)
 
     return out_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ingest an M4 frequency group subset")
-    parser.add_argument("--dataset", default="M4")
+    parser = argparse.ArgumentParser(description="Ingest an M4 frequency group subset as a reference dataset")
     parser.add_argument("--group", default="Daily", choices=list(FREQ_TO_PANDAS))
     parser.add_argument("--limit", type=int, default=50)
     args = parser.parse_args()
 
-    out_path = ingest(args.dataset, args.group, args.limit)
-    print(f"Wrote normalized subset to {out_path}")
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        dataset = get_or_create_reference_dataset(db, name=f"M4 ({args.group})", format=DatasetFormat.long)
+        out_path = ingest(db, dataset.id, args.group, args.limit)
+        dataset.status = DatasetStatus.ready
+        db.commit()
+    finally:
+        db.close()
+
+    print(f"Wrote normalized subset to {out_path} (dataset_id={dataset.id})")
 
 
 if __name__ == "__main__":

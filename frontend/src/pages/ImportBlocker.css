@@ -1,0 +1,27 @@
+.import-blocker {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-6);
+}
+
+.import-blocker-card {
+  max-width: 480px;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.import-blocker-card .page-title {
+  margin-bottom: var(--space-3);
+}
+
+.import-blocker-cta {
+  display: inline-block;
+  margin-top: var(--space-4);
+  text-decoration: none;
+}
+
+.import-blocker-secondary {
+  margin-top: var(--space-3);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

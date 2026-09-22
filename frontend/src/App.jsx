@@ -1,6 +1,8 @@
 import { NavLink, Route, Routes } from "react-router-dom";
-import Dashboard from "./pages/Dashboard.jsx";
+import Demo from "./pages/Demo.jsx";
 import Explorer from "./pages/Explorer.jsx";
+import ImportWizard from "./pages/ImportWizard.jsx";
+import Landing from "./pages/Landing.jsx";
 import Workbench from "./pages/Workbench.jsx";
 import "./App.css";
 
@@ -19,13 +21,18 @@ function App() {
           <NavLink to="/workbench" className={({ isActive }) => (isActive ? "active" : "")}>
             Workbench
           </NavLink>
+          <NavLink to="/import" className={({ isActive }) => (isActive ? "active" : "")}>
+            Import
+          </NavLink>
         </nav>
       </header>
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/demo" element={<Demo />} />
           <Route path="/explorer" element={<Explorer />} />
           <Route path="/workbench" element={<Workbench />} />
+          <Route path="/import" element={<ImportWizard />} />
         </Routes>
       </main>
     </div>

@@ -102,7 +102,6 @@ export default function Explorer() {
             <thead>
               <tr>
                 <th>Series</th>
-                <th>Dataset</th>
                 <th>Frequency</th>
                 <th>Obs</th>
                 <th>Trend</th>
@@ -117,7 +116,6 @@ export default function Explorer() {
                 return (
                   <tr key={s.series_id}>
                     <td className="series-id">{s.series_id}</td>
-                    <td>{s.dataset}</td>
                     <td>{s.frequency}</td>
                     <td>{s.n_obs}</td>
                     <td>
