@@ -14,6 +14,7 @@ from app.core.paths import DATA_PROCESSED_DIR
 from app.datasets.models import Dataset, DatasetStatus
 from app.ingestion.writer import write_series_table
 from app.imports.storage import get_upload_path
+from app.imports.timestamps import parse_timestamps
 from app.imports.validation import apply_mapping
 from app.jobs.models import Job, JobStatus
 from app.llm.cache import store_diagnostics_batch
@@ -26,7 +27,7 @@ LLM_BATCH_SIZE = 20
 
 def _clean_and_dedupe(long_df: pd.DataFrame) -> pd.DataFrame:
     df = long_df.copy()
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df["timestamp"] = parse_timestamps(df["timestamp"])
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     df = df.dropna(subset=["timestamp", "value"])
     # Duplicate (series_id, timestamp): keep the last occurrence, per the

@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from app.imports.detection import detect_format_and_mapping
+from app.imports.timestamps import parse_timestamps
 from app.imports.validation import apply_mapping, melt_wide_to_long, validate_mapping
 
 
@@ -172,3 +173,75 @@ def test_apply_mapping_long_defaults_series_id_when_unmapped():
     out = apply_mapping(df, mapping, "long")
 
     assert (out["series_id"] == "series_1").all()
+
+
+def test_parse_timestamps_handles_decimal_year_monthly():
+    # R's time() on a monthly ts() object, e.g. AirPassengers.csv: each
+    # year is a whole number, each month an even 1/12 fraction of it.
+    raw = pd.Series([1949, 1949.08333333333, 1949.16666666667, 1949.25, 1949.91666666667])
+
+    parsed = parse_timestamps(raw)
+
+    assert list(parsed) == [
+        pd.Timestamp("1949-01-01"),
+        pd.Timestamp("1949-02-01"),
+        pd.Timestamp("1949-03-01"),
+        pd.Timestamp("1949-04-01"),
+        pd.Timestamp("1949-12-01"),
+    ]
+
+
+def test_parse_timestamps_still_handles_real_date_strings():
+    raw = pd.Series(["2020-01-01", "2020-01-02", "2020-01-03"])
+
+    parsed = parse_timestamps(raw)
+
+    assert parsed.notna().all()
+    assert parsed.iloc[0] == pd.Timestamp("2020-01-01")
+
+
+def test_parse_timestamps_does_not_misfire_on_ordinary_numeric_ids():
+    # Small sequential integers outside a plausible year range (e.g. a
+    # row counter mistakenly mapped as timestamp) must not be treated as
+    # decimal years.
+    raw = pd.Series([1, 2, 3, 4, 5])
+
+    parsed = parse_timestamps(raw)
+
+    # Falls through to pandas' default numeric-as-epoch-ns interpretation,
+    # not the decimal-year path (which would require values in [1500, 2200]).
+    assert parsed.notna().all()
+    assert parsed.iloc[0] != pd.Timestamp("0001-01-01")
+
+
+def test_validate_blocks_when_timestamp_parsing_collapses_into_duplicates():
+    # A CSV like AirPassengers.csv but WITHOUT the decimal-year fix applied
+    # would collapse every row into near-identical nanosecond timestamps.
+    # Simulate that directly: many rows sharing one timestamp after parsing.
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2020-01-01T00:00:00.000000001"] * 20,
+            "series_id": ["A"] * 20,
+            "value": range(20),
+        }
+    )
+    mapping = {"timestamp": "timestamp", "series_id": "series_id", "value": "value"}
+
+    result = validate_mapping(df, mapping, "long")
+
+    assert result["can_proceed"] is False
+    assert any("duplicate" in e.lower() for e in result["errors"])
+
+
+def test_validate_succeeds_on_real_decimal_year_csv_shape():
+    # The actual AirPassengers.csv shape (already melted to long form),
+    # now that decimal-year parsing is supported.
+    years = [1949 + m / 12 for m in range(24)]
+    df = pd.DataFrame({"timestamp": years, "series_id": ["value"] * 24, "value": range(112, 136)})
+    mapping = {"timestamp": "timestamp", "series_id": "series_id", "value": "value"}
+
+    result = validate_mapping(df, mapping, "long")
+
+    assert result["can_proceed"] is True
+    assert result["valid_row_count"] == 24
+    assert not any("duplicate" in e.lower() for e in result["errors"])

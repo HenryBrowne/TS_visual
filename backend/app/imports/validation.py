@@ -8,9 +8,12 @@ once real user CSVs surface edge cases.
 
 import pandas as pd
 
+from app.imports.timestamps import parse_timestamps
+
 VALIDATE_SAMPLE_ROWS = 5000
 BLOCKING_NON_NUMERIC_VALUE_FRACTION = 0.20
 MIN_TIMESTAMP_PARSE_FRACTION = 0.5
+BLOCKING_DUPLICATE_FRACTION = 0.5
 
 
 def melt_wide_to_long(df: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
@@ -46,7 +49,7 @@ def validate_mapping(df: pd.DataFrame, mapping: dict[str, str], fmt: str) -> dic
     errors: list[str] = []
     warnings: list[str] = []
 
-    parsed_ts = pd.to_datetime(long_df["timestamp"], errors="coerce")
+    parsed_ts = parse_timestamps(long_df["timestamp"])
     ts_parse_fraction = parsed_ts.notna().mean() if total_rows else 0.0
     if ts_parse_fraction < MIN_TIMESTAMP_PARSE_FRACTION:
         errors.append(
@@ -83,10 +86,18 @@ def validate_mapping(df: pd.DataFrame, mapping: dict[str, str], fmt: str) -> dic
         dup_mask = clean.duplicated(subset=["series_id", "timestamp"], keep=False)
         n_duplicates = int(dup_mask.sum())
         if n_duplicates > 0:
-            warnings.append(
-                f"{n_duplicates} duplicate (series, timestamp) rows found -- "
-                "the last occurrence of each will be kept."
-            )
+            duplicate_fraction = n_duplicates / valid_rows
+            if duplicate_fraction > BLOCKING_DUPLICATE_FRACTION:
+                errors.append(
+                    f"{n_duplicates} of {valid_rows} rows ({duplicate_fraction:.0%}) share a duplicate "
+                    "(series, timestamp) pair after parsing -- the timestamp column likely isn't being "
+                    "parsed correctly (e.g. not a real date/time format)."
+                )
+            else:
+                warnings.append(
+                    f"{n_duplicates} duplicate (series, timestamp) rows found -- "
+                    "the last occurrence of each will be kept."
+                )
 
         # Infer frequency from the first series as a representative sample
         # (validate operates on a bounded sample, not the full file).
