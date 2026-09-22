@@ -15,6 +15,7 @@ import pandas as pd
 from datasetsforecast.m4 import M4
 
 from app.core.db import Base, SessionLocal, engine
+from app.core.frequency import FREQ_TO_PANDAS
 from app.ingestion.models import Series
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -22,14 +23,6 @@ DATA_RAW_DIR = PROJECT_ROOT / "data" / "raw"
 DATA_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
 ANCHOR_DATE = pd.Timestamp("2013-01-01")
-FREQ_OFFSETS = {
-    "Yearly": "YS",
-    "Quarterly": "QS",
-    "Monthly": "MS",
-    "Weekly": "W",
-    "Daily": "D",
-    "Hourly": "h",
-}
 
 
 def normalize(y_df: pd.DataFrame, group: str, limit: int) -> pd.DataFrame:
@@ -42,7 +35,7 @@ def normalize(y_df: pd.DataFrame, group: str, limit: int) -> pd.DataFrame:
     # `ds` is a 1-indexed step counter shared across all series in the group
     # (M4 releases no real dates), so timestamps only depend on the step, not
     # on which series it belongs to.
-    freq = FREQ_OFFSETS[group]
+    freq = FREQ_TO_PANDAS[group]
     step_range = pd.date_range(start=ANCHOR_DATE, periods=subset["ds"].max(), freq=freq)
     subset["timestamp"] = step_range[subset["ds"].to_numpy() - 1]
 
@@ -89,7 +82,7 @@ def ingest(dataset: str, group: str, limit: int) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest an M4 frequency group subset")
     parser.add_argument("--dataset", default="M4")
-    parser.add_argument("--group", default="Daily", choices=list(FREQ_OFFSETS))
+    parser.add_argument("--group", default="Daily", choices=list(FREQ_TO_PANDAS))
     parser.add_argument("--limit", type=int, default=50)
     args = parser.parse_args()
 
